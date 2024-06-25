@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<style>
+
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .container {
+        flex: 1;
+        margin-top:5px;
+    }
+
+    footer {
+        padding: 3px;
+    }
+
+    header{
+        font-size: 18px;
+    }
+
+    .nav-item{
+        font-size: 18px;
+    }
+
+
+</style>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Race" asp-action="Index">Horse Racing</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Race" asp-action="Index">Races</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Race" asp-action="ViewBets">Bets</a>
+                        </li>
+                    </ul>
+
+            <div class="login">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <span class="navbar-text text-dark">Hello, @User.Identity.Name!</span>
+
+                    <!-- Dla zalogowanego użytkownika -->
+                    <form asp-controller="Login" asp-action="Logout" method="post" class="form-inline">
+                        <button type="submit" class="btn btn-logout btn-link">Logout</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="nav-link text-dark" asp-controller="Login" asp-action="Login">
+                        Login
+                    </a>
+                }
+            </div>
+        </div>
+    </nav>
+    </header>
+
+    <div class="container">
+        @RenderBody()
+    </div>
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container">
+            <span class="text-muted">&copy; @DateTime.Now.Year - Horse Races</span>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+    <script src="~/Scripts/UpdateRaces.js"></script>
+</body>
+</html>

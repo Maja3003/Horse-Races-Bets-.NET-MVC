@@ -1,0 +1,30 @@
+﻿@model IEnumerable<Bet>
+
+@{
+    ViewBag.Title = "View Bets";
+}
+
+<h2>View Bets</h2>
+
+<table class="table">
+    <tr>
+        <th>Bet ID</th>
+        <th>User Name</th>
+        <th>Race ID</th>
+        <th>Horse ID</th>
+        <th>Amount</th>
+        <th>Winning Bet</th>
+    </tr>
+
+    @foreach (var bet in Model)
+    {
+        <tr>
+            <td>@bet.BetId</td>
+            <td>@bet.UserName</td>
+            <td>@bet.RaceId</td>
+            <td>@bet.HorseId</td>
+            <td>@bet.Amount</td>
+            <td>@(bet.IsWinningBet ? "Yes" : "No")</td>
+        </tr>
+    }
+</table>

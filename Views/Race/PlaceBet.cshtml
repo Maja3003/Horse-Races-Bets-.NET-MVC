@@ -1,0 +1,25 @@
+﻿@model             Race
+
+@{
+    ViewBag.Title = "Place Bet";
+}
+
+<h2>Place Bet on Race @Model.RaceId</h2>
+
+@using (Html.BeginForm())
+{
+    <div class="form-group">
+        @Html.Label("Horse")
+        @Html.DropDownList("horseId", new SelectList(Model.Horses, "HorseId", "Name"), "Select a horse", new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        @Html.Label("User Name")
+        @Html.TextBox("userName", null, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        @Html.Label("Bet Amount")
+        @Html.TextBox("amount", null, new { @class = "form-control" })
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Place Bet</button>
+}

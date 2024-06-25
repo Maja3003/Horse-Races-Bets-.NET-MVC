@@ -1,0 +1,38 @@
+﻿@model IEnumerable<Race>
+
+@{
+    ViewBag.Title = "Racing";
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Race ID</th>
+            <th>Start Time</th>
+            <th>Horses</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="raceTableBody">
+        @foreach (var race in Model)
+        {
+            <tr>
+                <td>@race.RaceId</td>
+                <td>@race.StartTime</td>
+                <td>
+                    @foreach (var horse in race.Horses)
+                    {
+                        <p>@horse.Name (Odds: @horse.Odds) - @if (horse.IsWinner)
+                            {
+                                <b>Winner!</b>
+                            }</p>
+                    }
+                </td>
+                <td>
+                    <a href="@Url.Action("PlaceBet", new { raceId = race.RaceId })">Place Bet</a> |
+                    <a href="@Url.Action("SimulateRace", new { raceId = race.RaceId })">Simulate Race</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
