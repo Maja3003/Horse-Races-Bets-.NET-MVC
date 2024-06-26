@@ -283,3 +283,5 @@ D:\GitRepository\Horse-Races-Bets-.NET\obj\Debug\net8.0\refint\HorseRacing.dll
 D:\GitRepository\Horse-Races-Bets-.NET\obj\Debug\net8.0\HorseRacing.pdb
 D:\GitRepository\Horse-Races-Bets-.NET\obj\Debug\net8.0\HorseRacing.genruntimeconfig.cache
 D:\GitRepository\Horse-Races-Bets-.NET\obj\Debug\net8.0\ref\HorseRacing.dll
+D:\GitRepository\Horse-Races-Bets-.NET\bin\Debug\net8.0\Newtonsoft.Json.dll
+D:\GitRepository\Horse-Races-Bets-.NET\bin\Debug\net8.0\System.Net.WebSockets.WebSocketProtocol.dll

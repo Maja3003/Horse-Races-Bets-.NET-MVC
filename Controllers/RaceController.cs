@@ -3,7 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using HorseRacing.Models;
+using Microsoft.AspNetCore.SignalR;
+using HorseRacing.Hubs;
+using System.Numerics;
 
 namespace HorseRacing.Controllers
 {
@@ -12,9 +16,12 @@ namespace HorseRacing.Controllers
         private static List<Race> races = new List<Race>();
         private static List<Bet> bets = new List<Bet>();
         private static Mutex mutex = new Mutex();
+        private readonly IHubContext<BettingHub> _hubContext;
 
-        public RaceController()
+        public RaceController(IHubContext<BettingHub> hubContext)
         {
+            _hubContext = hubContext;
+
             if (!races.Any())
             {
                 InitializeRaces();
@@ -23,30 +30,51 @@ namespace HorseRacing.Controllers
 
         private void InitializeRaces()
         {
-            races.Add(new Race
-            {
-                RaceId = 1,
-                StartTime = DateTime.Now.AddMinutes(10),
-                Horses = new List<Horse>
-                {
-                    new Horse { HorseId = 1, Name = "Lightning", Odds = 2.5 },
-                    new Horse { HorseId = 2, Name = "Thunder", Odds = 3.0 },
-                    new Horse { HorseId = 3, Name = "Storm", Odds = 4.0 }
-                }
-            });
+            var horseNames = new List<string>
+    {
+        "Thunderbolt", "Shadowfax", "Black Beauty", "Silver Streak", "Midnight Star",
+        "Golden Glory", "Storm Chaser", "Mystic Wind", "Lightning Strike", "Desert Mirage",
+        "Whispering Pines", "Crimson Tide", "Blue Moon", "White Knight", "Firestorm",
+        "Emerald Dawn", "Silent Thunder", "Velvet Dream", "Phantom Rider", "Sapphire Sky",
+        "Shadow Dancer", "Majestic Spirit", "Noble Heart", "Frostbite", "Silver Blaze", "Eclipse",
+        "Hurricane", "Falcon"
+    };
 
-            races.Add(new Race
+            var random = new Random();
+            int horseNameIndex = 0;
+
+            var startTimes = new List<int> { 120, 360, 600 }; // 2 minutes, 6 minutes, 10 minutes
+
+            for (int raceId = 1; raceId <= 3; raceId++)
             {
-                RaceId = 2,
-                StartTime = DateTime.Now.AddMinutes(20),
-                Horses = new List<Horse>
+                var horseCount = random.Next(8, 10); // Random number of horses between 8 and 9
+                var horses = new List<Horse>();
+
+                for (int i = 0; i < horseCount; i++)
                 {
-                    new Horse { HorseId = 4, Name = "Blaze", Odds = 2.0 },
-                    new Horse { HorseId = 5, Name = "Flash", Odds = 3.5 },
-                    new Horse { HorseId = 6, Name = "Bolt", Odds = 5.0 }
+                    var winnerOdds = Math.Round(random.NextDouble() * 5 + 1, 2); // Random odds between 1 and 6
+                    var otherOdds = Math.Round(winnerOdds * (random.NextDouble() * 0.5 + 0.5), 2); // Random odds between 50% and 100% of winnerOdds
+
+                    horses.Add(new Horse
+                    {
+                        HorseId = i + 1,
+                        Name = horseNames[horseNameIndex % horseNames.Count],
+                        WinnerOdds = winnerOdds,
+                        OtherOdds = otherOdds
+                    });
+                    horseNameIndex++;
                 }
-            });
+
+                races.Add(new Race
+                {
+                    RaceId = raceId,
+                    Horses = horses,
+                    StartTime = DateTime.Now.AddSeconds(startTimes[raceId - 1]) // Set start time to 2, 6, 10 minutes from now
+                });
+            }
         }
+
+
 
         public IActionResult Index()
         {
@@ -60,7 +88,7 @@ namespace HorseRacing.Controllers
         }
 
         [HttpPost]
-        public IActionResult PlaceBet(int raceId, int horseId, string userName, double amount)
+        public async Task<IActionResult> PlaceBet(int raceId, int horseId, string userName, double amount)
         {
             mutex.WaitOne();
             try
@@ -78,12 +106,15 @@ namespace HorseRacing.Controllers
                     BetId = bets.Count + 1,
                     RaceId = raceId,
                     HorseId = horseId,
-                    HorseName = horse.Name, // Przypisywanie nazwy konia
+                    HorseName = horse.Name,
                     UserName = userName,
                     Amount = amount,
                     IsWinningBet = false // To be determined after race
                 };
                 bets.Add(bet);
+
+                // Wyœlij aktualizacjê zak³adu do wszystkich klientów
+                await _hubContext.Clients.All.SendAsync("ReceiveBet", bet);
             }
             finally
             {
@@ -92,7 +123,7 @@ namespace HorseRacing.Controllers
             return RedirectToAction("Index");
         }
 
-        public IActionResult SimulateRace(int raceId)
+        public async Task<IActionResult> SimulateRace(int raceId)
         {
             var race = races.FirstOrDefault(r => r.RaceId == raceId);
             if (race != null)
@@ -108,6 +139,7 @@ namespace HorseRacing.Controllers
                         bet.IsWinningBet = true;
                     }
                 }
+                await _hubContext.Clients.All.SendAsync("ReceiveRaceUpdate", raceId, winningHorse.HorseId);
             }
             return RedirectToAction("Index");
         }

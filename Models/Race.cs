@@ -13,7 +13,8 @@ namespace HorseRacing.Models
     {
         public int HorseId { get; set; }
         public string Name { get; set; }
-        public double Odds { get; set; }
+        public double WinnerOdds { get; set; }
+        public double OtherOdds { get; set; }
         public bool IsWinner { get; set; }
     }
 }

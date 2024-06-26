@@ -14,7 +14,7 @@
                         '<td>';
 
                     race.Horses.forEach(function (horse) {
-                        raceRow += '<p>' + horse.Name + ' (Odds: ' + horse.Odds + ')' + (horse.IsWinner ? ' - <b>Winner!</b>' : '') + '</p>';
+                        raceRow += '<p>' + horse.Name + ' (WinnerOdds: ' + horse.WinnerOdds + ')' + (horse.IsWinner ? ' - <b>Winner!</b>' : '') + '</p>';
                     });
 
                     raceRow += '</td>' +

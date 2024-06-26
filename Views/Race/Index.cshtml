@@ -1,38 +1,470 @@
-﻿@model IEnumerable<Race>
+﻿@model IEnumerable<HorseRacing.Models.Race>
 
 @{
-    ViewBag.Title = "Racing";
+    ViewBag.Title = "Race Betting";
 }
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Race ID</th>
-            <th>Start Time</th>
-            <th>Horses</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="raceTableBody">
-        @foreach (var race in Model)
-        {
-            <tr>
-                <td>@race.RaceId</td>
-                <td>@race.StartTime</td>
-                <td>
-                    @foreach (var horse in race.Horses)
-                    {
-                        <p>@horse.Name (Odds: @horse.Odds) - @if (horse.IsWinner)
-                            {
-                                <b>Winner!</b>
-                            }</p>
-                    }
-                </td>
-                <td>
-                    <a href="@Url.Action("PlaceBet", new { raceId = race.RaceId })">Place Bet</a> |
-                    <a href="@Url.Action("SimulateRace", new { raceId = race.RaceId })">Simulate Race</a>
-                </td>
-            </tr>
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: Arial, sans-serif;
+    }
+
+    h2 {
+        margin-top: 20px;
+        color: #333;
+    }
+
+    .tabs {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 10px;
+        clear: both;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #f1f1f1;
+        border: 1px solid #ccc;
+        border-radius: 5px 5px 0 0;
+        margin-right: 5px;
+        text-align: center;
+    }
+
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
         }
-    </tbody>
-</table>
+
+    .tab-content {
+        display: none;
+        padding: 20px;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 0 5px 5px 5px;
+    }
+
+        .tab-content.active {
+            width: 65%;
+            display: block;
+        }
+
+    .race-time {
+        font-size: 15px;
+        color: darkorange;
+    }
+
+    .main-content {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        position: relative;
+    }
+
+    .side-card {
+        width: 60%;
+        max-width: 250px;
+        height: 300px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin: 0px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
+        top: 0;
+    }
+
+        .side-card.left {
+            left: -25px;
+            width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .side-card.right {
+            right: -25px;
+            width: 500px;
+            background-color: #Dcdcdc;
+            border-radius: 8px;
+            margin: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            color: #f8f9fa;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+    .race-table {
+        width: 100%;
+        max-width: 1400px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .race-card {
+        width: 95%;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .race-header {
+        padding: 10px;
+        background-color: #f1f1f1;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .race-location {
+        font-weight: bold;
+        color: #555;
+    }
+
+    .race-body {
+        padding: 10px;
+    }
+
+    .horse-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #ddd;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .horse-name {
+        font-weight: bold;
+        color: #333;
+        flex: 1 1 150px;
+    }
+
+    .horse-odds {
+        color: #777;
+        flex: 1 1 100px;
+        text-align: right;
+    }
+
+    .bet-options {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex: 1 1 400px;
+    }
+
+    .bet-option {
+        background-color: #E0E0E0;
+        border-radius: 5px;
+        padding: 6px;
+        margin: 5px;
+        color: black;
+        text-decoration: none;
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .bet-option:hover {
+            background-color: #FECB98;
+            color: black;
+        }
+
+    .bet-odds {
+        color: darkorange;
+        font-weight: bold;
+        text-align: right;
+        flex: 1;
+    }
+
+    .bet-description {
+        margin-left: 10px;
+        text-align: left;
+        flex: 1;
+    }
+
+
+
+
+    .bet-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        background-color: #f3f4f9;
+        padding: 10px;
+        border-radius: 5px;
+        color: black; /* Kolor pomarańczowy */
+        position: relative; /* Dodaj to */
+    }
+
+        .bet-item .bet-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bet-item .bet-odds {
+            font-weight: bold;
+            text-align: right;
+            margin-left: 10px;
+        }
+
+    .place-bet-button {
+        width: 49%;
+        background-color: orange; /* Kolor pomarańczowy */
+        border: none;
+        color: #333; /* Kolor ciemnoszary */
+        font-weight: bold;
+        padding: 18px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+    }
+
+        .place-bet-button:hover {
+            background-color: #FECB98; /* Ciemniejszy pomarańczowy */
+        }
+
+    .bid-button{
+        width: 49%;
+        background-color: orange; /* Kolor pomarańczowy */
+        border: none;
+        color: #333; /* Kolor ciemnoszary */
+        font-weight: bold;
+        padding: 18px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+    }
+
+        .bid-button:hover {
+            background-color: #FECB98; /* Ciemniejszy pomarańczowy */
+        }
+
+    .trash-icon {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        position: absolute; /* Dodaj to */
+        right: 10px; /* Dodaj to */
+        bottom: 10px;
+    }
+</style>
+
+<h2 class="text-center">Race Betting</h2>
+
+<div class="tabs">
+    <div class="tab active" data-tab="1">
+        Del Mar, California
+        <div class="race-time" id="race-time-1"></div>
+    </div>
+    <div class="tab" data-tab="2">
+        Del Mar, California
+        <div class="race-time" id="race-time-2"></div>
+    </div>
+    <div class="tab" data-tab="3">
+        Del Mar, California
+        <div class="race-time" id="race-time-3"></div>
+    </div>
+</div>
+
+
+<div class="main-content">
+    <div class="side-card left"></div>
+
+    <div id="tab-1" class="tab-content active">
+        <div class="race-table">
+            @foreach (var race in Model.Where(r => r.RaceId == 1))
+            {
+                <div class="race-card">
+                    <div class="race-header">
+                        <div class="race-location">
+                            <span>@race.Horses.Count</span>
+                            <img src="https://static.thenounproject.com/png/1324978-200.png" style="width:20px; height:20px;">
+                        </div>
+                    </div>
+                    <div class="race-body">
+                        @foreach (var horse in race.Horses)
+                        {
+                            <div class="horse-row">
+                                <div class="horse-name">@horse.Name</div>
+                                <div class="bet-options">
+                                    <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.WinnerOdds" data-bettype="Winner">
+                                        <span class="bet-description">Winner</span>
+                                        <span class="bet-odds">@horse.WinnerOdds</span>
+                                    </a>
+                                    <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.OtherOdds" data-bettype="1-3">
+                                        <span class="bet-description">1-3</span>
+                                        <span class="bet-odds">@horse.OtherOdds</span>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div id="tab-2" class="tab-content">
+        <div class="race-table">
+            @foreach (var race in Model.Where(r => r.RaceId == 2))
+            {
+                <div class="race-card">
+                    <div class="race-header">
+                        <div class="race-location">
+                            <span>@race.Horses.Count</span>
+                            <img src="https://static.thenounproject.com/png/1324978-200.png" style="width:20px; height:20px;">
+                        </div>
+                    </div>
+                    <div class="race-body">
+                        @foreach (var horse in race.Horses)
+                        {
+                            <div class="horse-row">
+                                <div class="horse-name">@horse.Name</div>
+                                <div class="bet-options">
+                                    <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.WinnerOdds" data-bettype="Winner">
+                                        <span class="bet-description">Winner</span>
+                                        <span class="bet-odds">@horse.WinnerOdds</span>
+                                    </a>
+                                    <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.OtherOdds" data-bettype="1-3">
+                                        <span class="bet-description">1-3</span>
+                                        <span class="bet-odds">@horse.OtherOdds</span>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div id="tab-3" class="tab-content">
+        <div class="race-table">
+            @foreach (var race in Model.Where(r => r.RaceId == 3))
+            {
+                <div class="race-card">
+                    <div class="race-header">
+                        <div class="race-location">
+                            <span>@race.Horses.Count</span>
+                            <img src="https://static.thenounproject.com/png/1324978-200.png" style="width:20px; height:20px;">
+                        </div>
+                    </div>
+                    <div class="race-body">
+                        @foreach (var horse in race.Horses)
+                        {
+                            <div class="horse-row">
+                                <div class="horse-name">@horse.Name</div>
+                                <div class="bet-options">
+                                    <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.WinnerOdds" data-bettype="Winner">
+                                        <span class="bet-description">Winner</span>
+                                        <span class="bet-odds">@horse.WinnerOdds</span>
+                                    </a>
+                                    <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.OtherOdds" data-bettype="1-3">
+                                        <span class="bet-description">1-3</span>
+                                        <span class="bet-odds">@horse.OtherOdds</span>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="side-card right">
+        <h4 style="color: black; text-align: center; font-size: 19px;">Your Bets</h4>
+        <div id="bet-list"></div>
+        <button class="bid-button">Bid</button>
+        <button class="place-bet-button">Place Bet</button>
+    </div>
+</div>
+
+
+@section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tabs = document.querySelectorAll('.tab');
+            var tabContents = document.querySelectorAll('.tab-content');
+            var raceTimes = [120, 360, 600];
+
+            tabs.forEach(function (tab, index) {
+                tab.addEventListener('click', function () {
+                    tabs.forEach(function (t) { t.classList.remove('active'); });
+                    tab.classList.add('active');
+
+                    tabContents.forEach(function (tc) { tc.classList.remove('active'); });
+                    document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.add('active');
+                });
+            });
+
+            function updateRaceTimes() {
+                raceTimes = raceTimes.map(function (time) { return time - 1; });
+
+                raceTimes.forEach(function (time, index) {
+                    var minutes = Math.floor(time / 60);
+                    var seconds = time % 60;
+                    document.getElementById('race-time-' + (index + 1)).textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                });
+
+                setTimeout(updateRaceTimes, 1000);
+            }
+
+            updateRaceTimes();
+        });
+
+        $(document).ready(function () {
+            var connection = new signalR.HubConnectionBuilder().withUrl("/bettingHub").build();
+
+            connection.on("ReceiveBet", function (bet) {
+                console.log("New bet placed:", bet);
+                // Możesz dodać kod do aktualizacji widoku z nowym zakładem
+            });
+
+            connection.on("ReceiveRaceUpdate", function (raceId, winningHorseId) {
+                console.log("Race updated:", raceId, winningHorseId);
+                // Możesz dodać kod do aktualizacji widoku z wynikami wyścigu
+            });
+
+            connection.start().catch(function (err) {
+                return console.error(err.toString());
+            });
+
+            // Handle bet option click
+            $('.bet-option').on('click', function (e) {
+                e.preventDefault();
+                var horseName = $(this).data('horse');
+                var odds = $(this).data('odds');
+                var betType = $(this).data('bettype');
+
+                var betItem = `
+                            <div class="bet-item">
+                                <div class="bet-details">
+                                    <span style="font-weight: bold;">${horseName}</span>
+                                    <span>${betType}</span>
+                                </div>
+                                <div class="bet-odds">${odds}</div>
+                                                <img src="https://cdn3.iconfinder.com/data/icons/linecons-free-vector-icons-pack/32/trash-512.png" class="trash-icon delete-bet" alt="Delete">
+                            </div>
+                        `;
+
+                $('#bet-list').append(betItem);
+            });
+
+            // Handle delete bet
+            $(document).on('click', '.delete-bet', function () {
+                $(this).parent('.bet-item').remove();
+            });
+        });
+    </script>
+}
+

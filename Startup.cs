@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System;
 using HorseRacing.Data;
+using HorseRacing.Hubs;
 
 namespace HorseRacing
 {
@@ -34,6 +35,7 @@ namespace HorseRacing
 
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,8 +61,10 @@ namespace HorseRacing
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Race}/{action=Index}/{id?}");
+            name: "default",
+            pattern: "{controller=Race}/{action=Index}/{id?}");
+                endpoints.MapRazorPages();
+                endpoints.MapHub<BettingHub>("/bettingHub");
             });
         }
     }
