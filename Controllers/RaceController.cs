@@ -65,14 +65,23 @@ namespace HorseRacing.Controllers
             mutex.WaitOne();
             try
             {
+                var race = races.FirstOrDefault(r => r.RaceId == raceId);
+                var horse = race?.Horses.FirstOrDefault(h => h.HorseId == horseId);
+
+                if (horse == null)
+                {
+                    return BadRequest("Invalid horse ID");
+                }
+
                 var bet = new Bet
                 {
                     BetId = bets.Count + 1,
                     RaceId = raceId,
                     HorseId = horseId,
+                    HorseName = horse.Name, // Przypisywanie nazwy konia
                     UserName = userName,
                     Amount = amount,
-                    IsWinningBet = false
+                    IsWinningBet = false // To be determined after race
                 };
                 bets.Add(bet);
             }

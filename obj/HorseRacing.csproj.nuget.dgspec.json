@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Studia\\Semestr 6\\.NET\\WebApplication2\\HorseRacing.csproj": {}
+    "D:\\GitRepository\\Horse-Races-Bets-.NET\\HorseRacing.csproj": {}
   },
   "projects": {
-    "D:\\Studia\\Semestr 6\\.NET\\WebApplication2\\HorseRacing.csproj": {
+    "D:\\GitRepository\\Horse-Races-Bets-.NET\\HorseRacing.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Studia\\Semestr 6\\.NET\\WebApplication2\\HorseRacing.csproj",
+        "projectUniqueName": "D:\\GitRepository\\Horse-Races-Bets-.NET\\HorseRacing.csproj",
         "projectName": "HorseRacing",
-        "projectPath": "D:\\Studia\\Semestr 6\\.NET\\WebApplication2\\HorseRacing.csproj",
+        "projectPath": "D:\\GitRepository\\Horse-Races-Bets-.NET\\HorseRacing.csproj",
         "packagesPath": "C:\\Users\\Maja\\.nuget\\packages\\",
-        "outputPath": "D:\\Studia\\Semestr 6\\.NET\\WebApplication2\\obj\\",
+        "outputPath": "D:\\GitRepository\\Horse-Races-Bets-.NET\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\Visual Studio\\Shared\\NuGetPackages"

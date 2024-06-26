@@ -6,6 +6,7 @@
         public int RaceId { get; set; }
         public string UserName { get; set; }
         public int HorseId { get; set; }
+        public string HorseName { get; set; }
         public double Amount { get; set; }
         public bool IsWinningBet { get; set; }
     }

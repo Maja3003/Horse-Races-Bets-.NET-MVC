@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "5qCkGEeIJrryQnCo/ztBdbaOnnrmmNHCWdzP7stSSabEWP4I/8TwrWk4zc9Qg9zUoQJ6jdpOx8I0hPB/Oc46Ag==",
+  "dgSpecHash": "3AwPVaiLlR0L6dnfpAtU3NF7fHPxwdwRNTeuggCcLs9/G5G4W+07bGo6ni93u+3lU4HrbEyiVegfdeYOQ0S8Iw==",
   "success": true,
-  "projectFilePath": "D:\\Studia\\Semestr 6\\.NET\\WebApplication2\\HorseRacing.csproj",
+  "projectFilePath": "D:\\GitRepository\\Horse-Races-Bets-.NET\\HorseRacing.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Maja\\.nuget\\packages\\azure.core\\1.35.0\\azure.core.1.35.0.nupkg.sha512",
     "C:\\Users\\Maja\\.nuget\\packages\\azure.identity\\1.10.3\\azure.identity.1.10.3.nupkg.sha512",
