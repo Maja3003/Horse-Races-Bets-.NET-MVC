@@ -7,20 +7,21 @@ using System.Threading.Tasks;
 using HorseRacing.Models;
 using Microsoft.AspNetCore.SignalR;
 using HorseRacing.Hubs;
-using System.Numerics;
+using HorseRacing.Data;
 
 namespace HorseRacing.Controllers
 {
     public class RaceController : Controller
     {
         private static List<Race> races = new List<Race>();
-        private static List<Bet> bets = new List<Bet>();
         private static Mutex mutex = new Mutex();
         private readonly IHubContext<BettingHub> _hubContext;
+        private readonly ApplicationDbContext _context;
 
-        public RaceController(IHubContext<BettingHub> hubContext)
+        public RaceController(IHubContext<BettingHub> hubContext, ApplicationDbContext context)
         {
             _hubContext = hubContext;
+            _context = context;
 
             if (!races.Any())
             {
@@ -31,14 +32,14 @@ namespace HorseRacing.Controllers
         private void InitializeRaces()
         {
             var horseNames = new List<string>
-    {
-        "Thunderbolt", "Shadowfax", "Black Beauty", "Silver Streak", "Midnight Star",
-        "Golden Glory", "Storm Chaser", "Mystic Wind", "Lightning Strike", "Desert Mirage",
-        "Whispering Pines", "Crimson Tide", "Blue Moon", "White Knight", "Firestorm",
-        "Emerald Dawn", "Silent Thunder", "Velvet Dream", "Phantom Rider", "Sapphire Sky",
-        "Shadow Dancer", "Majestic Spirit", "Noble Heart", "Frostbite", "Silver Blaze", "Eclipse",
-        "Hurricane", "Falcon"
-    };
+            {
+                "Thunderbolt", "Shadowfax", "Black Beauty", "Silver Streak", "Midnight Star",
+                "Golden Glory", "Storm Chaser", "Mystic Wind", "Lightning Strike", "Desert Mirage",
+                "Whispering Pines", "Crimson Tide", "Blue Moon", "White Knight", "Firestorm",
+                "Emerald Dawn", "Silent Thunder", "Velvet Dream", "Phantom Rider", "Sapphire Sky",
+                "Shadow Dancer", "Majestic Spirit", "Noble Heart", "Frostbite", "Silver Blaze", "Eclipse",
+                "Hurricane", "Falcon"
+            };
 
             var random = new Random();
             int horseNameIndex = 0;
@@ -74,8 +75,6 @@ namespace HorseRacing.Controllers
             }
         }
 
-
-
         public IActionResult Index()
         {
             return View(races);
@@ -88,39 +87,53 @@ namespace HorseRacing.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PlaceBet(int raceId, int horseId, string userName, double amount)
+        public async Task<IActionResult> PlaceBet(int raceId, List<Bet> bets, string userName, double amount)
         {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Login");
+            }
+
             mutex.WaitOne();
             try
             {
                 var race = races.FirstOrDefault(r => r.RaceId == raceId);
-                var horse = race?.Horses.FirstOrDefault(h => h.HorseId == horseId);
 
-                if (horse == null)
+                if (race == null)
                 {
-                    return BadRequest("Invalid horse ID");
+                    return BadRequest("Invalid race ID");
                 }
 
-                var bet = new Bet
+                foreach (var bet in bets)
                 {
-                    BetId = bets.Count + 1,
-                    RaceId = raceId,
-                    HorseId = horseId,
-                    HorseName = horse.Name,
-                    UserName = userName,
-                    Amount = amount,
-                    IsWinningBet = false // To be determined after race
-                };
-                bets.Add(bet);
+                    var horse = race.Horses.FirstOrDefault(h => h.Name == bet.HorseName);
 
-                // Wyœlij aktualizacjê zak³adu do wszystkich klientów
-                await _hubContext.Clients.All.SendAsync("ReceiveBet", bet);
+                    if (horse == null)
+                    {
+                        return BadRequest("Invalid horse name");
+                    }
+
+                    var newBet = new Bet
+                    {
+                        RaceId = raceId,
+                        HorseId = horse.HorseId,
+                        HorseName = horse.Name,
+                        UserName = userName,
+                        Amount = amount,
+                        IsWinningBet = false
+                    };
+                    _context.Bets.Add(newBet);
+                    await _context.SaveChangesAsync();
+
+                    // Send the new bet update to all clients
+                    await _hubContext.Clients.All.SendAsync("ReceiveBet", newBet);
+                }
             }
             finally
             {
                 mutex.ReleaseMutex();
             }
-            return RedirectToAction("Index");
+            return Ok();
         }
 
         public async Task<IActionResult> SimulateRace(int raceId)
@@ -132,13 +145,14 @@ namespace HorseRacing.Controllers
                 var winningHorse = race.Horses[random.Next(race.Horses.Count)];
                 winningHorse.IsWinner = true;
 
-                foreach (var bet in bets.Where(b => b.RaceId == raceId))
+                foreach (var bet in _context.Bets.Where(b => b.RaceId == raceId))
                 {
                     if (bet.HorseId == winningHorse.HorseId)
                     {
                         bet.IsWinningBet = true;
                     }
                 }
+                await _context.SaveChangesAsync();
                 await _hubContext.Clients.All.SendAsync("ReceiveRaceUpdate", raceId, winningHorse.HorseId);
             }
             return RedirectToAction("Index");
@@ -146,7 +160,20 @@ namespace HorseRacing.Controllers
 
         public IActionResult ViewBets()
         {
-            return View(bets);
+            var allBets = _context.Bets.OrderByDescending(b => b.BetId).Take(25).ToList();
+            return View(allBets);
+        }
+
+        public IActionResult MyBets()
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Login");
+            }
+
+            var userName = User.Identity.Name;
+            var userBets = _context.Bets.Where(b => b.UserName == userName).OrderByDescending(b => b.BetId).Take(25).ToList();
+            return View(userBets);
         }
 
         [HttpGet]

@@ -65,6 +65,16 @@ namespace HorseRacing
             pattern: "{controller=Race}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
                 endpoints.MapHub<BettingHub>("/bettingHub");
+
+                endpoints.MapControllerRoute(
+                    name: "login",
+                    pattern: "Login",
+                    defaults: new { controller = "Login", action = "Login" });
+
+                endpoints.MapControllerRoute(
+                    name: "Register",
+                    pattern: "Register",
+                    defaults: new { controller = "Register", action = "Register" });
             });
         }
     }

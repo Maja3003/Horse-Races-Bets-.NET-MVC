@@ -215,35 +215,36 @@
             margin-left: 10px;
         }
 
+    .betting-controls {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .bet-amount-input {
+        width: 49%;
+        padding: 8px;
+        border: none;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: bold;
+        text-align: center;
+    }
+
     .place-bet-button {
         width: 49%;
-        background-color: orange; /* Kolor pomarańczowy */
+        background-color: orange;
         border: none;
-        color: #333; /* Kolor ciemnoszary */
+        color: #fff;
         font-weight: bold;
-        padding: 18px;
+        padding: 8px;
         border-radius: 5px;
         cursor: pointer;
         text-align: center;
+        font-size: 12px;
     }
 
         .place-bet-button:hover {
-            background-color: #FECB98; /* Ciemniejszy pomarańczowy */
-        }
-
-    .bid-button{
-        width: 49%;
-        background-color: orange; /* Kolor pomarańczowy */
-        border: none;
-        color: #333; /* Kolor ciemnoszary */
-        font-weight: bold;
-        padding: 18px;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: center;
-    }
-
-        .bid-button:hover {
             background-color: #FECB98; /* Ciemniejszy pomarańczowy */
         }
 
@@ -251,10 +252,12 @@
         width: 18px;
         height: 18px;
         cursor: pointer;
-        position: absolute; /* Dodaj to */
-        right: 10px; /* Dodaj to */
+        position: absolute;
+        right: 10px;
         bottom: 10px;
     }
+
+
 </style>
 
 <h2 class="text-center">Race Betting</h2>
@@ -273,7 +276,6 @@
         <div class="race-time" id="race-time-3"></div>
     </div>
 </div>
-
 
 <div class="main-content">
     <div class="side-card left"></div>
@@ -383,88 +385,125 @@
     <div class="side-card right">
         <h4 style="color: black; text-align: center; font-size: 19px;">Your Bets</h4>
         <div id="bet-list"></div>
-        <button class="bid-button">Bid</button>
-        <button class="place-bet-button">Place Bet</button>
+        <div class="betting-controls">
+            <input type="text" class="bet-amount-input" placeholder="Bid zł" />
+            <button class="place-bet-button">BET AND PLAY</button>
+        </div>
     </div>
+
+    @section scripts {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var tabs = document.querySelectorAll('.tab');
+                var tabContents = document.querySelectorAll('.tab-content');
+                var raceTimes = [120, 360, 600];
+
+                tabs.forEach(function (tab, index) {
+                    tab.addEventListener('click', function () {
+                        tabs.forEach(function (t) { t.classList.remove('active'); });
+                        tab.classList.add('active');
+
+                        tabContents.forEach(function (tc) { tc.classList.remove('active'); });
+                        document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.add('active');
+                    });
+                });
+
+                function updateRaceTimes() {
+                    raceTimes = raceTimes.map(function (time) { return time - 1; });
+
+                    raceTimes.forEach(function (time, index) {
+                        var minutes = Math.floor(time / 60);
+                        var seconds = time % 60;
+                        document.getElementById('race-time-' + (index + 1)).textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                    });
+
+                    setTimeout(updateRaceTimes, 1000);
+                }
+
+                updateRaceTimes();
+            });
+
+            $(document).ready(function () {
+                var connection = new signalR.HubConnectionBuilder().withUrl("/bettingHub").build();
+
+                connection.on("ReceiveBet", function (bet) {
+                    console.log("New bet placed:", bet);
+                });
+
+                connection.on("ReceiveRaceUpdate", function (raceId, winningHorseId) {
+                    console.log("Race updated:", raceId, winningHorseId);
+                });
+
+                connection.start().catch(function (err) {
+                    return console.error(err.toString());
+                });
+
+                $('.bet-option').on('click', function (e) {
+                    e.preventDefault();
+                    var horseName = $(this).data('horse');
+                    var odds = $(this).data('odds');
+                    var betType = $(this).data('bettype');
+
+                    var betItem = `
+                                    <div class="bet-item">
+                                        <div class="bet-details">
+                                            <span>${horseName}</span>
+                                            <span>${betType}</span>
+                                        </div>
+                                        <div class="bet-odds">${odds}</div>
+                                                    <img src="https://png.pngtree.com/png-vector/20190326/ourmid/pngtree-vector-trash-icon-png-image_865253.jpg" class="trash-icon delete-bet" alt="Delete">
+                                    </div>
+                                `;
+
+                    $('#bet-list').append(betItem);
+                });
+
+                $(document).on('click', '.delete-bet', function () {
+                    $(this).parent('.bet-item').remove();
+                });
+
+                $('.place-bet-button').on('click', function () {
+                    var amount = $('.bet-amount-input').val();
+                    if (!amount) {
+                        alert('Please enter a bet amount.');
+                        return;
+                    }
+
+                    var userName = '@User.Identity.Name'; // Replace with actual method to get current user
+
+                    if (!userName) {
+                        window.location.href = '/Login'; // Redirect to login page if not logged in
+                        return;
+                    }
+
+                    var bets = [];
+                    $('#bet-list .bet-item').each(function () {
+                        var horseName = $(this).find('.bet-details span:first').text();
+                        var betType = $(this).find('.bet-details span:last').text();
+                        var odds = $(this).find('.bet-odds').text();
+                        bets.push({ HorseName: horseName, BetType: betType, Odds: odds });
+                    });
+
+                    if (bets.length === 0) {
+                        alert('Please add at least one bet.');
+                        return;
+                    }
+
+                    var raceId = 1; // Replace with the actual raceId from the selected tab
+
+                    $.post('/Race/PlaceBet', { raceId: raceId, bets: bets, userName: userName, amount: amount }, function (data) {
+                        alert('Bet placed successfully.');
+                        $('#bet-list').empty();
+                        $('.bet-amount-input').val('');
+                    }).fail(function () {
+                        alert('Failed to place bet.');
+                    });
+                });
+            });
+        </script>
+    }
 </div>
 
 
-@section scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var tabs = document.querySelectorAll('.tab');
-            var tabContents = document.querySelectorAll('.tab-content');
-            var raceTimes = [120, 360, 600];
-
-            tabs.forEach(function (tab, index) {
-                tab.addEventListener('click', function () {
-                    tabs.forEach(function (t) { t.classList.remove('active'); });
-                    tab.classList.add('active');
-
-                    tabContents.forEach(function (tc) { tc.classList.remove('active'); });
-                    document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.add('active');
-                });
-            });
-
-            function updateRaceTimes() {
-                raceTimes = raceTimes.map(function (time) { return time - 1; });
-
-                raceTimes.forEach(function (time, index) {
-                    var minutes = Math.floor(time / 60);
-                    var seconds = time % 60;
-                    document.getElementById('race-time-' + (index + 1)).textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-                });
-
-                setTimeout(updateRaceTimes, 1000);
-            }
-
-            updateRaceTimes();
-        });
-
-        $(document).ready(function () {
-            var connection = new signalR.HubConnectionBuilder().withUrl("/bettingHub").build();
-
-            connection.on("ReceiveBet", function (bet) {
-                console.log("New bet placed:", bet);
-                // Możesz dodać kod do aktualizacji widoku z nowym zakładem
-            });
-
-            connection.on("ReceiveRaceUpdate", function (raceId, winningHorseId) {
-                console.log("Race updated:", raceId, winningHorseId);
-                // Możesz dodać kod do aktualizacji widoku z wynikami wyścigu
-            });
-
-            connection.start().catch(function (err) {
-                return console.error(err.toString());
-            });
-
-            // Handle bet option click
-            $('.bet-option').on('click', function (e) {
-                e.preventDefault();
-                var horseName = $(this).data('horse');
-                var odds = $(this).data('odds');
-                var betType = $(this).data('bettype');
-
-                var betItem = `
-                            <div class="bet-item">
-                                <div class="bet-details">
-                                    <span style="font-weight: bold;">${horseName}</span>
-                                    <span>${betType}</span>
-                                </div>
-                                <div class="bet-odds">${odds}</div>
-                                                <img src="https://cdn3.iconfinder.com/data/icons/linecons-free-vector-icons-pack/32/trash-512.png" class="trash-icon delete-bet" alt="Delete">
-                            </div>
-                        `;
-
-                $('#bet-list').append(betItem);
-            });
-
-            // Handle delete bet
-            $(document).on('click', '.delete-bet', function () {
-                $(this).parent('.bet-item').remove();
-            });
-        });
-    </script>
-}
 

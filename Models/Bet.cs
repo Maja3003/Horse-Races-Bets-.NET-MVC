@@ -1,7 +1,10 @@
-﻿namespace HorseRacing.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace HorseRacing.Models
 {
     public class Bet
     {
+        [Key]
         public int BetId { get; set; }
         public int RaceId { get; set; }
         public string UserName { get; set; }

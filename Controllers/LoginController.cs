@@ -28,7 +28,7 @@ public class LoginController : Controller
 
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Race");
             }
 
             if (result.IsLockedOut)
@@ -51,6 +51,6 @@ public class LoginController : Controller
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Index", "Race");
     }
 }
