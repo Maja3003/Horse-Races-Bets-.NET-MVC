@@ -7,6 +7,13 @@ namespace HorseRacing.Models
         public int RaceId { get; set; }
         public DateTime StartTime { get; set; }
         public List<Horse> Horses { get; set; }
+        public bool IsSimulated { get; set; }
+
+        public Race()
+        {
+            Horses = new List<Horse>();
+        }
+
     }
 
     public class Horse

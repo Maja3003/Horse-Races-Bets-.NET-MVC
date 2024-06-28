@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System;
 using HorseRacing.Data;
-using HorseRacing.Hubs;
 
 namespace HorseRacing
 {
@@ -64,7 +63,6 @@ namespace HorseRacing
             name: "default",
             pattern: "{controller=Race}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
-                endpoints.MapHub<BettingHub>("/bettingHub");
 
                 endpoints.MapControllerRoute(
                     name: "login",

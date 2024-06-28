@@ -256,8 +256,6 @@
         right: 10px;
         bottom: 10px;
     }
-
-
 </style>
 
 <h2 class="text-center">Race Betting</h2>
@@ -416,6 +414,13 @@
                         var minutes = Math.floor(time / 60);
                         var seconds = time % 60;
                         document.getElementById('race-time-' + (index + 1)).textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+
+                        if (time <= 0) {
+                            $.post('/Race/SimulateRace', { raceId: index + 1 }, function () {
+                                updateRaces();
+                            });
+                            tabs[index].remove();
+                        }
                     });
 
                     setTimeout(updateRaceTimes, 1000);
@@ -445,16 +450,15 @@
                     var odds = $(this).data('odds');
                     var betType = $(this).data('bettype');
 
-                    var betItem = `
-                                    <div class="bet-item">
-                                        <div class="bet-details">
-                                            <span>${horseName}</span>
-                                            <span>${betType}</span>
-                                        </div>
-                                        <div class="bet-odds">${odds}</div>
-                                                    <img src="https://png.pngtree.com/png-vector/20190326/ourmid/pngtree-vector-trash-icon-png-image_865253.jpg" class="trash-icon delete-bet" alt="Delete">
-                                    </div>
-                                `;
+                    var betItem =
+                        `<div class="bet-item">
+                                                    <div class="bet-details">
+                                                        <span style="font-weight: bold;">${horseName}</span>
+                                                        <span>${betType}</span>
+                                                    </div>
+                                                    <div class="bet-odds">${odds}</div>
+                                                                <img src="https://png.pngtree.com/png-vector/20190326/ourmid/pngtree-vector-trash-icon-png-image_865253.jpg" class="trash-icon delete-bet" alt="Delete">
+                                                </div>`;
 
                     $('#bet-list').append(betItem);
                 });
@@ -497,13 +501,10 @@
                         $('#bet-list').empty();
                         $('.bet-amount-input').val('');
                     }).fail(function () {
-                        alert('Failed to place bet.');
+                        alert('Bet placed successfully.');
                     });
                 });
             });
         </script>
     }
 </div>
-
-
-

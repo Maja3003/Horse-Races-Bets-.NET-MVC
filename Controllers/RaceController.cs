@@ -6,8 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using HorseRacing.Models;
 using Microsoft.AspNetCore.SignalR;
-using HorseRacing.Hubs;
 using HorseRacing.Data;
+using Microsoft.Extensions.Hosting;
 
 namespace HorseRacing.Controllers
 {
@@ -15,12 +15,10 @@ namespace HorseRacing.Controllers
     {
         private static List<Race> races = new List<Race>();
         private static Mutex mutex = new Mutex();
-        private readonly IHubContext<BettingHub> _hubContext;
         private readonly ApplicationDbContext _context;
 
-        public RaceController(IHubContext<BettingHub> hubContext, ApplicationDbContext context)
+        public RaceController(ApplicationDbContext context)
         {
-            _hubContext = hubContext;
             _context = context;
 
             if (!races.Any())
@@ -54,7 +52,7 @@ namespace HorseRacing.Controllers
                 for (int i = 0; i < horseCount; i++)
                 {
                     var winnerOdds = Math.Round(random.NextDouble() * 5 + 1, 2); // Random odds between 1 and 6
-                    var otherOdds = Math.Round(winnerOdds * (random.NextDouble() * 0.5 + 0.5), 2); // Random odds between 50% and 100% of winnerOdds
+                    var otherOdds = winnerOdds == 0 ? 1 : Math.Round(winnerOdds * (random.NextDouble() * 0.5 + 0.5), 2); // Avoid divide-by-zero
 
                     horses.Add(new Horse
                     {
@@ -70,8 +68,43 @@ namespace HorseRacing.Controllers
                 {
                     RaceId = raceId,
                     Horses = horses,
-                    StartTime = DateTime.Now.AddSeconds(startTimes[raceId - 1]) // Set start time to 2, 6, 10 minutes from now
+                    StartTime = DateTime.Now.AddSeconds(startTimes[raceId - 1]),
+                    IsSimulated = false // Add this property
                 });
+            }
+
+            StartBackgroundTask();
+        }
+
+        private void StartBackgroundTask()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(1000); // Check every second
+                    SimulateDueRaces();
+                }
+            });
+        }
+
+        private void SimulateDueRaces()
+        {
+            mutex.WaitOne();
+            try
+            {
+                foreach (var race in races)
+                {
+                    if (race.StartTime <= DateTime.Now && !race.IsSimulated)
+                    {
+                        SimulateRace(race.RaceId).Wait();
+                        race.IsSimulated = true;
+                    }
+                }
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
             }
         }
 
@@ -83,6 +116,10 @@ namespace HorseRacing.Controllers
         public IActionResult PlaceBet(int raceId)
         {
             var race = races.FirstOrDefault(r => r.RaceId == raceId);
+            if (race == null || race.StartTime <= DateTime.Now)
+            {
+                return BadRequest("Betting for this race is closed.");
+            }
             return View(race);
         }
 
@@ -99,9 +136,9 @@ namespace HorseRacing.Controllers
             {
                 var race = races.FirstOrDefault(r => r.RaceId == raceId);
 
-                if (race == null)
+                if (race == null || race.StartTime <= DateTime.Now)
                 {
-                    return BadRequest("Invalid race ID");
+                    return BadRequest("Betting for this race is closed.");
                 }
 
                 foreach (var bet in bets)
@@ -123,11 +160,15 @@ namespace HorseRacing.Controllers
                         IsWinningBet = false
                     };
                     _context.Bets.Add(newBet);
-                    await _context.SaveChangesAsync();
-
-                    // Send the new bet update to all clients
-                    await _hubContext.Clients.All.SendAsync("ReceiveBet", newBet);
                 }
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception for debugging purposes
+                Console.WriteLine(ex);
+                return StatusCode(500, "Internal server error");
             }
             finally
             {
@@ -135,6 +176,7 @@ namespace HorseRacing.Controllers
             }
             return Ok();
         }
+
 
         public async Task<IActionResult> SimulateRace(int raceId)
         {
@@ -153,7 +195,6 @@ namespace HorseRacing.Controllers
                     }
                 }
                 await _context.SaveChangesAsync();
-                await _hubContext.Clients.All.SendAsync("ReceiveRaceUpdate", raceId, winningHorse.HorseId);
             }
             return RedirectToAction("Index");
         }
