@@ -5,7 +5,6 @@ namespace HorseRacing.Models
     public class Race
     {
         public int RaceId { get; set; }
-        public DateTime StartTime { get; set; }
         public List<Horse> Horses { get; set; }
         public bool IsSimulated { get; set; }
 
@@ -20,6 +19,8 @@ namespace HorseRacing.Models
     {
         public int HorseId { get; set; }
         public string Name { get; set; }
+        public double CurrentSpeed { get; set; }
+        public double DistanceCovered { get; set; } = 0;
         public double WinnerOdds { get; set; }
         public double OtherOdds { get; set; }
         public bool IsWinner { get; set; }

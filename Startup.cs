@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System;
 using HorseRacing.Data;
+using HorseRacing.Hubs;
 
 namespace HorseRacing
 {
@@ -60,8 +61,8 @@ namespace HorseRacing
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
-            name: "default",
-            pattern: "{controller=Race}/{action=Index}/{id?}");
+                    name: "default",
+                    pattern: "{controller=Race}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
 
                 endpoints.MapControllerRoute(
@@ -73,6 +74,9 @@ namespace HorseRacing
                     name: "Register",
                     pattern: "Register",
                     defaults: new { controller = "Register", action = "Register" });
+
+                // Add the SignalR endpoint mapping here
+                endpoints.MapHub<RaceHub>("/raceHub"); // Add this line
             });
         }
     }

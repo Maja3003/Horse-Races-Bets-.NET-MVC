@@ -78,8 +78,13 @@
         .side-card.left {
             left: -25px;
             width: 500px;
+            background-color: #Dcdcdc;
             border-radius: 8px;
+            margin: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            background-color: #Dcdcdc;
+            border-radius: 8px;
         }
 
         .side-card.right {
@@ -177,6 +182,11 @@
             color: black;
         }
 
+        .bet-option.disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
     .bet-odds {
         color: darkorange;
         font-weight: bold;
@@ -256,6 +266,23 @@
         right: 10px;
         bottom: 10px;
     }
+
+    .simulate-race-button {
+        background-color: orange;
+        border: none;
+        color: #fff;
+        font-weight: bold;
+        padding: 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 15px;
+    }
+
+        .simulate-race-button:hover {
+            background-color: #FECB98; /* Ciemniejszy pomarańczowy */
+        }
+
 </style>
 
 <h2 class="text-center">Race Betting</h2>
@@ -263,22 +290,19 @@
 <div class="tabs">
     <div class="tab active" data-tab="1">
         Del Mar, California
-        <div class="race-time" id="race-time-1"></div>
     </div>
     <div class="tab" data-tab="2">
         Del Mar, California
-        <div class="race-time" id="race-time-2"></div>
     </div>
     <div class="tab" data-tab="3">
         Del Mar, California
-        <div class="race-time" id="race-time-3"></div>
     </div>
 </div>
 
 <div class="main-content">
     <div class="side-card left"></div>
 
-    <div id="tab-1" class="tab-content active">
+    <div id="tab-1" class="tab-content active" data-tab="1" onclick="selectTab(1)">
         <div class="race-table">
             @foreach (var race in Model.Where(r => r.RaceId == 1))
             {
@@ -287,6 +311,9 @@
                         <div class="race-location">
                             <span>@race.Horses.Count</span>
                             <img src="https://static.thenounproject.com/png/1324978-200.png" style="width:20px; height:20px;">
+
+                            <button id="simulate-button-@race.RaceId" class="simulate-race-button" onclick="startSimulation(@race.RaceId, 1)">Simulate Race</button>
+                            <span id="countdown-@race.RaceId" class="countdown-timer"></span>
                         </div>
                     </div>
                     <div class="race-body">
@@ -297,11 +324,11 @@
                                 <div class="bet-options">
                                     <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.WinnerOdds" data-bettype="Winner">
                                         <span class="bet-description">Winner</span>
-                                        <span class="bet-odds">@horse.WinnerOdds</span>
+                                        <span class="bet-odds" id="winner-odds-@race.RaceId-@horse.HorseId">@horse.WinnerOdds</span>
                                     </a>
                                     <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.OtherOdds" data-bettype="1-3">
                                         <span class="bet-description">1-3</span>
-                                        <span class="bet-odds">@horse.OtherOdds</span>
+                                        <span class="bet-odds" id="other-odds-@race.RaceId-@horse.HorseId">@horse.OtherOdds</span>
                                     </a>
                                 </div>
                             </div>
@@ -312,7 +339,7 @@
         </div>
     </div>
 
-    <div id="tab-2" class="tab-content">
+    <div id="tab-2" class="tab-content" data-tab="2" onclick="selectTab(2)">
         <div class="race-table">
             @foreach (var race in Model.Where(r => r.RaceId == 2))
             {
@@ -321,6 +348,8 @@
                         <div class="race-location">
                             <span>@race.Horses.Count</span>
                             <img src="https://static.thenounproject.com/png/1324978-200.png" style="width:20px; height:20px;">
+                            <button id="simulate-button-@race.RaceId" class="simulate-race-button" onclick="startSimulation(@race.RaceId, 2)">Simulate Race</button>
+                            <span id="countdown-@race.RaceId" class="countdown-timer"></span>
                         </div>
                     </div>
                     <div class="race-body">
@@ -331,11 +360,11 @@
                                 <div class="bet-options">
                                     <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.WinnerOdds" data-bettype="Winner">
                                         <span class="bet-description">Winner</span>
-                                        <span class="bet-odds">@horse.WinnerOdds</span>
+                                        <span class="bet-odds" id="winner-odds-@race.RaceId-@horse.HorseId">@horse.WinnerOdds</span>
                                     </a>
                                     <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.OtherOdds" data-bettype="1-3">
                                         <span class="bet-description">1-3</span>
-                                        <span class="bet-odds">@horse.OtherOdds</span>
+                                        <span class="bet-odds" id="other-odds-@race.RaceId-@horse.HorseId">@horse.OtherOdds</span>
                                     </a>
                                 </div>
                             </div>
@@ -346,7 +375,7 @@
         </div>
     </div>
 
-    <div id="tab-3" class="tab-content">
+    <div id="tab-3" class="tab-content" data-tab="3" onclick="selectTab(3)">
         <div class="race-table">
             @foreach (var race in Model.Where(r => r.RaceId == 3))
             {
@@ -355,6 +384,8 @@
                         <div class="race-location">
                             <span>@race.Horses.Count</span>
                             <img src="https://static.thenounproject.com/png/1324978-200.png" style="width:20px; height:20px;">
+                            <button id="simulate-button-@race.RaceId" class="simulate-race-button" onclick="startSimulation(@race.RaceId, 3)">Simulate Race</button>
+                            <span id="countdown-@race.RaceId" class="countdown-timer"></span>
                         </div>
                     </div>
                     <div class="race-body">
@@ -365,11 +396,11 @@
                                 <div class="bet-options">
                                     <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.WinnerOdds" data-bettype="Winner">
                                         <span class="bet-description">Winner</span>
-                                        <span class="bet-odds">@horse.WinnerOdds</span>
+                                        <span class="bet-odds" id="winner-odds-@race.RaceId-@horse.HorseId">@horse.WinnerOdds</span>
                                     </a>
                                     <a href="#" class="bet-option" data-horse="@horse.Name" data-odds="@horse.OtherOdds" data-bettype="1-3">
                                         <span class="bet-description">1-3</span>
-                                        <span class="bet-odds">@horse.OtherOdds</span>
+                                        <span class="bet-odds" id="other-odds-@race.RaceId-@horse.HorseId">@horse.OtherOdds</span>
                                     </a>
                                 </div>
                             </div>
@@ -388,123 +419,220 @@
             <button class="place-bet-button">BET AND PLAY</button>
         </div>
     </div>
+</div>
 
-    @section scripts {
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var tabs = document.querySelectorAll('.tab');
-                var tabContents = document.querySelectorAll('.tab-content');
-                var raceTimes = [120, 360, 600];
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var tabs = document.querySelectorAll('.tab');
+        var tabContents = document.querySelectorAll('.tab-content');
+        var countdownIntervals = {}; // Store intervals for each race
+        var raceSimulationsStarted = {}; // Track simulation status for each race
 
-                tabs.forEach(function (tab, index) {
-                    tab.addEventListener('click', function () {
-                        tabs.forEach(function (t) { t.classList.remove('active'); });
-                        tab.classList.add('active');
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
 
-                        tabContents.forEach(function (tc) { tc.classList.remove('active'); });
-                        document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.add('active');
-                    });
+                tabContents.forEach(function (tc) { tc.classList.remove('active'); });
+                document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.add('active');
+            });
+        });
+
+        window.selectTab = function (tabId) { // Make the function available in the global scope
+            tabs.forEach(function (t) { t.classList.remove('active'); });
+            document.querySelector('.tab[data-tab="' + tabId + '"]').classList.add('active');
+
+            tabContents.forEach(function (tc) { tc.classList.remove('active'); });
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        window.startSimulation = function (raceId, tabId) { // Make the function available in the global scope
+            var button = document.getElementById('simulate-button-' + raceId);
+            var countdownElement = document.getElementById('countdown-' + raceId);
+            if (!countdownElement) {
+                countdownElement = document.createElement('span');
+                countdownElement.id = 'countdown-' + raceId;
+                countdownElement.classList.add('countdown-timer');
+                button.parentNode.appendChild(countdownElement);
+            }
+            var time = 1 * 60; // 1 minute in seconds
+
+            raceSimulationsStarted[raceId] = true; // Mark simulation as started
+
+            // Clear any existing interval for this race
+            if (countdownIntervals[raceId]) {
+                clearInterval(countdownIntervals[raceId]);
+            }
+
+            countdownIntervals[raceId] = setInterval(function () {
+                var minutes = Math.floor(time / 60);
+                var seconds = time % 60;
+                countdownElement.textContent = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                time--;
+
+                if (time < 0) {
+                    clearInterval(countdownIntervals[raceId]);
+                    countdownElement.textContent = '00:00';
+                    disableBetting(raceId, tabId);
+                }
+            }, 1000);
+
+            // Start the race simulation
+            fetch(`/Race/SimulateRace/${raceId}`, { method: 'POST' });
+        }
+
+        function disableBetting(raceId, tabId) {
+            var betOptions = document.querySelectorAll('#tab-' + tabId + ' .bet-option');
+            betOptions.forEach(function (option) {
+                option.classList.add('disabled');
+                option.onclick = function (event) {
+                    event.preventDefault();
+                };
+            });
+
+            // Disable the place bet button
+            document.querySelector('.place-bet-button').classList.add('disabled');
+            document.querySelector('.place-bet-button').onclick = function (event) {
+                event.preventDefault();
+            };
+        }
+
+        document.querySelectorAll('.simulate-race-button').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var raceId = button.id.split('-')[2];
+                var tabId = button.closest('.tab-content').id.split('-')[1];
+                startSimulation(raceId, tabId); // Ensure the function is properly called
+            });
+        });
+
+        var connection = new signalR.HubConnectionBuilder().withUrl("/raceHub").build(); // Corrected Hub endpoint
+
+        connection.on("UpdateRace", function (raceId, race) {
+            console.log("Received update for raceId:", raceId, "with data:", race);
+            updateRaceDisplay(raceId, race);
+        });
+
+        function updateRaceDisplay(raceId, race) {
+            console.log(`Updating display for raceId ${raceId} at ${new Date().toLocaleTimeString()}`);
+            if (!race || !race.horses) {
+                console.error(`No valid race data available for raceId: ${raceId}`);
+                return;
+            }
+
+            var activeTabId = document.querySelector('.tab-content.active').getAttribute('data-tab');
+            if (raceId.toString() === activeTabId) {
+                race.horses.forEach(horse => {
+                    var winnerOddsElement = document.getElementById(`winner-odds-${raceId}-${horse.horseId}`);
+                    var otherOddsElement = document.getElementById(`other-odds-${raceId}-${horse.horseId}`);
+                    if (winnerOddsElement && otherOddsElement) {
+                        winnerOddsElement.textContent = horse.winnerOdds.toFixed(2);
+                        otherOddsElement.textContent = horse.otherOdds.toFixed(2);
+                    }
                 });
+            } 
+        }
 
-                function updateRaceTimes() {
-                    raceTimes = raceTimes.map(function (time) { return time - 1; });
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
 
-                    raceTimes.forEach(function (time, index) {
-                        var minutes = Math.floor(time / 60);
-                        var seconds = time % 60;
-                        document.getElementById('race-time-' + (index + 1)).textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+        connection.on("RaceFinished", function (raceId, topThreeHorses) {
+            if (document.getElementById('tab-' + raceId).classList.contains('active')) {
+                var sideCardLeft = document.querySelector('.side-card.left');
+                sideCardLeft.innerHTML = '<h3 style="color: black; text-align: center; font-size: 19px;">Results for Race ' + raceId + '</h3>';
+                var list = document.createElement('ul');
+                topThreeHorses.forEach(function (horse) {
+                    var item = document.createElement('li');
+                    item.textContent = horse;
+                    list.appendChild(item);
+                });
+                sideCardLeft.appendChild(list);
+            }
+            console.log("Race finished. Winners: ", topThreeHorses);
+        });
 
-                        if (time <= 0) {
-                            $.post('/Race/SimulateRace', { raceId: index + 1 }, function () {
-                                updateRaces();
-                            });
-                            tabs[index].remove();
-                        }
-                    });
 
-                    setTimeout(updateRaceTimes, 1000);
+        document.querySelectorAll('.bet-option').forEach(function (option) {
+            option.addEventListener('click', function (e) {
+                e.preventDefault();
+                var raceId = option.closest('.tab-content').querySelector('.simulate-race-button').id.split('-')[2];
+
+                if (!raceSimulationsStarted[raceId]) {
+                    alert("Race is not Simulated");
+                    return;
                 }
 
-                updateRaceTimes();
+                var horseName = option.getAttribute('data-horse');
+                var odds = option.getAttribute('data-odds');
+                var betType = option.getAttribute('data-bettype');
+
+                var betItem = `
+                                <div class="bet-item">
+                                    <div class="bet-details">
+                                        <span>${horseName}</span>
+                                        <span style="font-weight:bold;">${betType}</span>
+                                    </div>
+                                    <img src="https://png.pngtree.com/png-vector/20190326/ourmid/pngtree-vector-trash-icon-png-image_865253.jpg" class="trash-icon delete-bet" alt="Delete">
+                                </div>`;
+
+                document.getElementById('bet-list').insertAdjacentHTML('beforeend', betItem);
+            });
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('delete-bet')) {
+                e.target.closest('.bet-item').remove();
+            }
+        });
+
+        document.querySelector('.place-bet-button').addEventListener('click', function (e) {
+            if (e.target.classList.contains('disabled')) {
+                e.preventDefault();
+                alert('Betting is currently disabled for this race.');
+                return;
+            }
+
+            var amount = document.querySelector('.bet-amount-input').value;
+            if (!amount) {
+                alert('Please enter a bet amount.');
+                return;
+            }
+
+            var userName = '@User.Identity.Name';
+
+            if (!userName) {
+                window.location.href = '/Login';
+                return;
+            }
+
+            var bets = [];
+            $('#bet-list .bet-item').each(function () {
+                var horseName = $(this).find('.bet-details span:first').text();
+                var betType = $(this).find('.bet-details span:last').text();
+                var odds = $(this).find('.bet-odds').text();
+                bets.push({ HorseName: horseName, BetType: betType, Odds: odds });
             });
 
-            $(document).ready(function () {
-                var connection = new signalR.HubConnectionBuilder().withUrl("/bettingHub").build();
+            if (bets.length === 0) {
+                alert('Please add at least one bet.');
+                return;
+            }
 
-                connection.on("ReceiveBet", function (bet) {
-                    console.log("New bet placed:", bet);
-                });
+            var raceId = $('.tab.active').data('tab'); // Get the actual raceId from the selected tab
 
-                connection.on("ReceiveRaceUpdate", function (raceId, winningHorseId) {
-                    console.log("Race updated:", raceId, winningHorseId);
-                });
-
-                connection.start().catch(function (err) {
-                    return console.error(err.toString());
-                });
-
-                $('.bet-option').on('click', function (e) {
-                    e.preventDefault();
-                    var horseName = $(this).data('horse');
-                    var odds = $(this).data('odds');
-                    var betType = $(this).data('bettype');
-
-                    var betItem =
-                        `<div class="bet-item">
-                                                    <div class="bet-details">
-                                                        <span style="font-weight: bold;">${horseName}</span>
-                                                        <span>${betType}</span>
-                                                    </div>
-                                                    <div class="bet-odds">${odds}</div>
-                                                                <img src="https://png.pngtree.com/png-vector/20190326/ourmid/pngtree-vector-trash-icon-png-image_865253.jpg" class="trash-icon delete-bet" alt="Delete">
-                                                </div>`;
-
-                    $('#bet-list').append(betItem);
-                });
-
-                $(document).on('click', '.delete-bet', function () {
-                    $(this).parent('.bet-item').remove();
-                });
-
-                $('.place-bet-button').on('click', function () {
-                    var amount = $('.bet-amount-input').val();
-                    if (!amount) {
-                        alert('Please enter a bet amount.');
-                        return;
-                    }
-
-                    var userName = '@User.Identity.Name'; // Replace with actual method to get current user
-
-                    if (!userName) {
-                        window.location.href = '/Login'; // Redirect to login page if not logged in
-                        return;
-                    }
-
-                    var bets = [];
-                    $('#bet-list .bet-item').each(function () {
-                        var horseName = $(this).find('.bet-details span:first').text();
-                        var betType = $(this).find('.bet-details span:last').text();
-                        var odds = $(this).find('.bet-odds').text();
-                        bets.push({ HorseName: horseName, BetType: betType, Odds: odds });
-                    });
-
-                    if (bets.length === 0) {
-                        alert('Please add at least one bet.');
-                        return;
-                    }
-
-                    var raceId = 1; // Replace with the actual raceId from the selected tab
-
-                    $.post('/Race/PlaceBet', { raceId: raceId, bets: bets, userName: userName, amount: amount }, function (data) {
-                        alert('Bet placed successfully.');
-                        $('#bet-list').empty();
-                        $('.bet-amount-input').val('');
-                    }).fail(function () {
-                        alert('Bet placed successfully.');
-                    });
-                });
+            $.post('/Race/PlaceBet', { raceId: raceId, bets: bets, userName: userName, amount: amount }, function (data) {
+                alert('Bet placed successfully.');
+                $('#bet-list').empty();
+                $('.bet-amount-input').val('');
+            }).fail(function () {
+                alert('Bet placed successfully.');
             });
-        </script>
-    }
-</div>
+        });
+    });
+</script>
+
+
+
+
+

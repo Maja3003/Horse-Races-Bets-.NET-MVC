@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HorseRacing")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1f597a00e0f59dfb0a1043522354f26aed3d251d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+46b7b065ce50cd08ebe709da3f13433c27577454")]
 [assembly: System.Reflection.AssemblyProductAttribute("HorseRacing")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HorseRacing")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

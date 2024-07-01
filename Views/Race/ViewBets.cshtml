@@ -13,6 +13,7 @@
         <th>Race ID</th>
         <th>Horse Name</th>
         <th>Amount</th>
+        <th>Bet Type</th>
         <th>Winning Bet</th>
     </tr>
 
@@ -24,6 +25,7 @@
             <td>@bet.RaceId</td>
             <td>@bet.HorseName</td>
             <td>@bet.Amount</td>
+            <td>@bet.BetType</td>
             <td>@(bet.IsWinningBet ? "Yes" : "No")</td>
         </tr>
     }

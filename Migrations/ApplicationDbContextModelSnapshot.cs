@@ -33,6 +33,10 @@ namespace HorseRacing.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("float");
 
+                    b.Property<string>("BetType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("HorseId")
                         .HasColumnType("int");
 
@@ -62,6 +66,12 @@ namespace HorseRacing.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HorseId"));
+
+                    b.Property<double>("CurrentSpeed")
+                        .HasColumnType("float");
+
+                    b.Property<double>("DistanceCovered")
+                        .HasColumnType("float");
 
                     b.Property<bool>("IsWinner")
                         .HasColumnType("bit");
@@ -94,8 +104,8 @@ namespace HorseRacing.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RaceId"));
 
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("IsSimulated")
+                        .HasColumnType("bit");
 
                     b.HasKey("RaceId");
 

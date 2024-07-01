@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using HorseRacing.Hubs;
+using System.Threading;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +10,7 @@ using HorseRacing.Models;
 using Microsoft.AspNetCore.SignalR;
 using HorseRacing.Data;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 namespace HorseRacing.Controllers
 {
@@ -16,10 +19,12 @@ namespace HorseRacing.Controllers
         private static List<Race> races = new List<Race>();
         private static Mutex mutex = new Mutex();
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<RaceHub> _hubContext;
 
-        public RaceController(ApplicationDbContext context)
+        public RaceController(ApplicationDbContext context, IHubContext<RaceHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
 
             if (!races.Any())
             {
@@ -42,24 +47,21 @@ namespace HorseRacing.Controllers
             var random = new Random();
             int horseNameIndex = 0;
 
-            var startTimes = new List<int> { 120, 360, 600 }; // 2 minutes, 6 minutes, 10 minutes
-
             for (int raceId = 1; raceId <= 3; raceId++)
             {
                 var horseCount = random.Next(8, 10); // Random number of horses between 8 and 9
                 var horses = new List<Horse>();
+                Random rnd = new Random();
 
                 for (int i = 0; i < horseCount; i++)
                 {
-                    var winnerOdds = Math.Round(random.NextDouble() * 5 + 1, 2); // Random odds between 1 and 6
-                    var otherOdds = winnerOdds == 0 ? 1 : Math.Round(winnerOdds * (random.NextDouble() * 0.5 + 0.5), 2); // Avoid divide-by-zero
-
                     horses.Add(new Horse
                     {
                         HorseId = i + 1,
                         Name = horseNames[horseNameIndex % horseNames.Count],
-                        WinnerOdds = winnerOdds,
-                        OtherOdds = otherOdds
+                        CurrentSpeed = rnd.Next(20,30),
+                        WinnerOdds = 2.0,
+                        OtherOdds = 2.0
                     });
                     horseNameIndex++;
                 }
@@ -68,12 +70,11 @@ namespace HorseRacing.Controllers
                 {
                     RaceId = raceId,
                     Horses = horses,
-                    StartTime = DateTime.Now.AddSeconds(startTimes[raceId - 1]),
-                    IsSimulated = false // Add this property
+                    IsSimulated = false
                 });
             }
 
-            StartBackgroundTask();
+         
         }
 
         private void StartBackgroundTask()
@@ -82,7 +83,7 @@ namespace HorseRacing.Controllers
             {
                 while (true)
                 {
-                    await Task.Delay(1000); // Check every second
+                    await Task.Delay(5000); // Check every 20 seconds
                     SimulateDueRaces();
                 }
             });
@@ -95,10 +96,9 @@ namespace HorseRacing.Controllers
             {
                 foreach (var race in races)
                 {
-                    if (race.StartTime <= DateTime.Now && !race.IsSimulated)
+                    if (!race.IsSimulated)
                     {
-                        SimulateRace(race.RaceId).Wait();
-                        race.IsSimulated = true;
+                        _ = SimulateRace(race.RaceId); // Changed to use asynchronous call
                     }
                 }
             }
@@ -108,19 +108,90 @@ namespace HorseRacing.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> SimulateRace(int raceId)
+        {
+            StartBackgroundTask();
+
+            var race = races.FirstOrDefault(r => r.RaceId == raceId);
+            if (race != null && !race.IsSimulated)
+            {
+
+                race.IsSimulated = true;
+                var totalDuration = 60; // Total duration in seconds for the race simulation
+                var updateInterval = totalDuration / 3; // Update three times during the race
+
+                    UpdateRaceOdds(race);
+                    await _hubContext.Clients.All.SendAsync("UpdateRace", race.RaceId, race);
+
+                var random = new Random();
+
+                for (int interval = 1; interval <= 2; interval++)
+                {
+                    await Task.Delay(updateInterval * 1000); // Delay for each third of the race
+
+                    foreach (var horse in race.Horses)
+                    {
+                        double speedChange = random.NextDouble() * 4 - 6;
+                        horse.CurrentSpeed += speedChange;
+                        horse.DistanceCovered += horse.CurrentSpeed > 0 ? horse.CurrentSpeed * updateInterval : 0;
+                    }
+
+                    UpdateRaceOdds(race);
+
+                    if (interval == 2)
+                    {
+                        MarkWinningBets(race); // Update bet results based on the final positions
+                        await _hubContext.Clients.All.SendAsync("RaceFinished", race.RaceId, race.Horses.OrderByDescending(h => h.DistanceCovered).Take(3).Select(h => h.Name));
+                    }
+                    else
+                    {
+                        await _hubContext.Clients.All.SendAsync("UpdateRace", race.RaceId, race);
+                    }
+                }
+                
+            }
+            return Ok();
+        }
+
+        private void UpdateRaceOdds(Race race)
+        {
+            var sortedHorses = race.Horses.OrderByDescending(h => h.DistanceCovered).ToList();
+            double baseOdds = 2.0; // Starting odds for the leader
+            int rank = 1;
+
+            // The base odds are lower for the leading horse, and increase for horses behind.
+            foreach (var horse in sortedHorses)
+            {
+                // The factor adjusts the odds inversely to the rank, higher rank (leading horses) get lower odds
+                double adjustmentFactor = 1 - 0.1 * (rank - 1);
+                horse.WinnerOdds = Math.Round(baseOdds / adjustmentFactor, 2);
+                horse.OtherOdds = Math.Round(horse.WinnerOdds * 0.8, 2);
+                rank++;
+            }
+
+            if (race.IsSimulated) // Assuming race is marked as simulated when finished
+            {
+                _hubContext.Clients.All.SendAsync("RaceFinished", race.RaceId, sortedHorses.Take(3).Select(h => h.Name).ToList());
+            }
+        }
+
+        private void MarkWinningBets(Race race)
+        {
+            var topThreeHorses = race.Horses.OrderByDescending(h => h.DistanceCovered).Take(3).Select(h => h.HorseId).ToList();
+            var betsToUpdate = _context.Bets.Where(b => b.RaceId == race.RaceId);
+
+            foreach (var bet in betsToUpdate)
+            {
+                bet.IsWinningBet = topThreeHorses.Contains(bet.HorseId);
+            }
+
+            _context.SaveChanges();
+        }
+
         public IActionResult Index()
         {
             return View(races);
-        }
-
-        public IActionResult PlaceBet(int raceId)
-        {
-            var race = races.FirstOrDefault(r => r.RaceId == raceId);
-            if (race == null || race.StartTime <= DateTime.Now)
-            {
-                return BadRequest("Betting for this race is closed.");
-            }
-            return View(race);
         }
 
         [HttpPost]
@@ -136,7 +207,7 @@ namespace HorseRacing.Controllers
             {
                 var race = races.FirstOrDefault(r => r.RaceId == raceId);
 
-                if (race == null || race.StartTime <= DateTime.Now)
+                if (race == null)
                 {
                     return BadRequest("Betting for this race is closed.");
                 }
@@ -157,7 +228,8 @@ namespace HorseRacing.Controllers
                         HorseName = horse.Name,
                         UserName = userName,
                         Amount = amount,
-                        IsWinningBet = false
+                        IsWinningBet = false,
+                        BetType = bet.BetType
                     };
                     _context.Bets.Add(newBet);
                 }
@@ -177,43 +249,26 @@ namespace HorseRacing.Controllers
             return Ok();
         }
 
-
-        public async Task<IActionResult> SimulateRace(int raceId)
-        {
-            var race = races.FirstOrDefault(r => r.RaceId == raceId);
-            if (race != null)
-            {
-                var random = new Random();
-                var winningHorse = race.Horses[random.Next(race.Horses.Count)];
-                winningHorse.IsWinner = true;
-
-                foreach (var bet in _context.Bets.Where(b => b.RaceId == raceId))
-                {
-                    if (bet.HorseId == winningHorse.HorseId)
-                    {
-                        bet.IsWinningBet = true;
-                    }
-                }
-                await _context.SaveChangesAsync();
-            }
-            return RedirectToAction("Index");
-        }
-
         public IActionResult ViewBets()
         {
-            var allBets = _context.Bets.OrderByDescending(b => b.BetId).Take(25).ToList();
+            var allBets = _context.Bets
+                .OrderByDescending(b => b.BetId)
+                .Take(15)
+                .ToList();
             return View(allBets);
         }
-
         public IActionResult MyBets()
         {
             if (!User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Login", "Login");
             }
-
             var userName = User.Identity.Name;
-            var userBets = _context.Bets.Where(b => b.UserName == userName).OrderByDescending(b => b.BetId).Take(25).ToList();
+            var userBets = _context.Bets
+                .Where(b => b.UserName == userName)
+                .OrderByDescending(b => b.BetId)
+                .Take(15)
+                .ToList();
             return View(userBets);
         }
 

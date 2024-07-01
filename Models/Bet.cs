@@ -11,6 +11,7 @@ namespace HorseRacing.Models
         public int HorseId { get; set; }
         public string HorseName { get; set; }
         public double Amount { get; set; }
+        public string BetType { get; set; }
         public bool IsWinningBet { get; set; }
     }
 }
