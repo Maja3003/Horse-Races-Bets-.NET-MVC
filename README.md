@@ -3,29 +3,29 @@ A web application simulating horse races where users can register, place bets on
 
 <h3 style="font-weight: bold;">Races List</h3>
 <p align="center">
-  <img src="https://i.imgur.com/yxPNaBu.png" width="100%">
-  <img src="https://i.imgur.com/FV4DowG.png" width="100%">
+  <img src="https://i.imgur.com/wLfab6O.png" width="100%">
+  <img src="https://i.imgur.com/5K6DEr3.png" width="100%">
 </p>
 
 <h3 style="font-weight: bold;">Bets</h3>
 <p align="center">
-  <img src="https://i.imgur.com/izubqlz.png" width="100%">
+  <img src="https://i.imgur.com/Uzc69BA.png" width="100%">
 </p>
 
 <h3 style="font-weight: bold;">Login/Register</h3>
 <p align="center">
-  <img src="https://i.imgur.com/Nx3Nva8.png" width="49%">
-  <img src="https://i.imgur.com/CoAnBPj.png" width="49%">
+  <img src="https://i.imgur.com/N8K75kg.png" width="49%">
+  <img src="https://i.imgur.com/NwOLRj7.png" width="49%">
 </p>
 
 <h3 style="font-weight: bold;">Betting</h3>
 <p align="center">
-  <img src="https://i.imgur.com/beHeobJ.png" width="100%">
+  <img src="https://i.imgur.com/QWqiwE1.png" width="100%">
 </p>
 
 <h3 style="font-weight: bold;">My bets</h3>
 <p align="center">
-  <img src="https://i.imgur.com/iQu2664.png" width="100%">
+  <img src="https://i.imgur.com/4XNqYFI.png" width="100%">
 </p>
 
 ## Features
