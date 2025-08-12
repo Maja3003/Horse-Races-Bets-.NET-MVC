@@ -37,12 +37,11 @@ A web application simulating horse races where users can register, place bets on
 - Results and bet history
 
 ## Technologies used
-- ASP.NET Core MVC
-- Entity Framework Core
-- ASP.NET Identity
-- SignalR (for real-time communication)
-- Razor Views (cshtml)
-- JavaScript (basic front-end interactivity)
+- **Frontend**: Razor Views, HTML5, CSS3, JavaScript
+- **Backend**: ASP.NET Core MVC, Entity Framework Core
+- **Authentication**: ASP.NET Identity
+- **Database**: SQL Server (via EF Core)
+- **Other**: SignalR (for real-time communication)
 
 ## What can be added
 - User wallet system – Enable users to manage virtual currency and enforce bet limits based on balance.
